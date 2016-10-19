@@ -581,6 +581,108 @@ static int help(void) {
         return 0;
 }
 
+
+//---------------- new code begin
+
+#include <ctype.h>
+#define TESTING 1
+int unlock_other_device1(char * crypt_type, char * device, char * mount_point, char ** passwords);
+int unlock_other_devices(char * crypttab_arg1, char ** passwords);
+
+int unlock_other_device1(char * crypt_type, char * device, char * mount_point, char ** passwords)
+{
+    struct crypt_device *cd = NULL;
+    int k;
+    log_info("Unlocking %s device [%s:%s]", crypt_type, device, mount_point);
+    k = crypt_init(&cd, device);
+    if (k)
+    {
+        log_error_errno(k, "unlock_other_device1: [%s:%s] crypt_init() failed: %m", device, mount_point);
+        return -1;
+    }
+
+    if (*crypt_type && *device && *mount_point)
+    {
+        if (strcmp(crypt_type, "truecrypt") == 0)
+            k = attach_tcrypt(cd, mount_point, NULL, passwords, 0);
+        else if (strcmp(crypt_type, "luks") == 0)
+            k = attach_luks_or_plain(cd, mount_point, NULL, NULL, passwords, 0);
+        else
+            log_error("unlock_other_device1: unknown argument %s", crypt_type);
+    } else
+    {
+        log_error("unlock_other_device1: missing arguments");
+    }
+
+    if (cd)
+        crypt_free(cd);
+
+    if (k < 0)
+    {
+        log_error(" Unlocking error %i [%s:%s]", k, device, mount_point);
+        return k;
+    }
+    log_info(" Device [%s:%s] unlocked.", device, mount_point);
+    return 0;
+}
+
+int unlock_other_devices(char * crypttab_arg1, char ** passwords)
+{
+    //remember about the entry in /usr/lib/dracut/dracut.conf.d/01-dist.conf
+    const char * CFGFILE = "/etc/crypttab-other.conf";
+    FILE * f;
+    char * line = NULL;
+    size_t linesize = 0;
+    int rlen;
+    const int tabsize = 4;
+    const int wordsize = 256;
+    char words[tabsize][wordsize];
+
+    //am I inside initramfs ?
+    if (access("/home", R_OK) == 0 && !TESTING)
+    {
+        //no - this is a normal mounted system
+        log_info("unlock_other_devices - skip - system is mounted");
+        return -1;
+    }
+
+    f = fopen(CFGFILE, "r");
+    if (f == NULL)
+    {
+        log_error("nunlock_other_devices: cannot open file %s", CFGFILE);
+        return -2;
+    }
+
+    //parse file - extract lines and words
+    while ((rlen = getline(&line, &linesize, f)) != -1)
+    {
+        char *token;
+        int pos = -1;
+        const char * delim = " \t\r\n";
+
+        token = strtok(line, delim);
+        memset(words, 0, sizeof(words));
+        while (token != NULL && pos < tabsize)
+        {
+            //log_info("token %i <%s>",pos,token);
+            if (strlen(token) >= wordsize - 1)
+                break;
+            pos++;
+            strcpy(words[pos], token);
+            token = strtok(NULL, delim);
+        }
+        if (strcmp(crypttab_arg1, words[0]) || words[0][0] == '#' || pos < tabsize - 1)
+            continue;
+        unlock_other_device1(words[1], words[2], words[3], passwords);
+    }
+    if (line != NULL)
+        free(line);
+    fclose(f);
+    return 0;
+}
+//---------------- new code end
+
+
 int main(int argc, char *argv[]) {
         int r = EXIT_FAILURE;
         struct crypt_device *cd = NULL;
@@ -696,6 +798,15 @@ int main(int argc, char *argv[]) {
                                                          arg_header ? argv[3] : NULL,
                                                          passwords,
                                                          flags);
+                  
+                        //---------------- new code begin
+                        if (k >= 0)
+                        {
+                            unlock_other_devices(argv[2], passwords);
+                        }
+                        //---------------- new code end
+
+                  
                         if (k >= 0)
                                 break;
                         else if (k == -EAGAIN) {
