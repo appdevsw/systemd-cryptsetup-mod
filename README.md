@@ -1,7 +1,7 @@
 # systemd-cryptsetup-mod
 **Automatically unlocking additional Truecrypt or Luks volumes during boot, without asking password twice.**
 
-The solution was tested on <b>Fedora 24  64-bit</b>. <br>
+The solution was tested on **Fedora 24  64-bit**. <br>
 Additional containers should have the same passwords as an encrypted root.
 
  - Download systemd form https://github.com/systemd/systemd.     Use
@@ -16,6 +16,9 @@ Additional containers should have the same passwords as an encrypted root.
     `systemd-master/src/cryptsetup/` directory.    
     Modify it, like I did in this github repository: <br>
     	https://github.com/appdevsw/systemd-cryptsetup-mod/commits/master/cryptsetup.c.<br>
+    	You can also view the differences between the original and modified version:<br>
+    https://github.com/appdevsw/systemd-cryptsetup-mod/commit/b49450409bd9cabeb9f055262c175b6a54561ae5#diff-babd06e0454f527a616eb6cf3796ed8c<br>
+    	<br>
     There are two pieces of code between lines
         
 	>    //---------------- new code begin     
@@ -23,8 +26,7 @@ Additional containers should have the same passwords as an encrypted root.
 	>   //---------------- new code end
 
     Copy and paste these fragments to your edited file in the right places.<br>
-    You can also view the differences between the original and modified version:<br>
-    https://github.com/appdevsw/systemd-cryptsetup-mod/commit/b49450409bd9cabeb9f055262c175b6a54561ae5#diff-babd06e0454f527a616eb6cf3796ed8c<br>
+    
     
     
  - Run make again. After a successful compilation we need two files
