@@ -1,7 +1,7 @@
 # systemd-cryptsetup-mod
 **Automatically unlocking additional Truecrypt or Luks volumes during boot, without asking password twice.**
 
-The solution was tested on Fedora 24  64-bit. <br>
+The solution was tested on <b>Fedora 24  64-bit<b>. <br>
 Additional containers should have the same passwords as an encrypted root.
 
  - Download systemd form https://github.com/systemd/systemd.     Use
@@ -77,7 +77,7 @@ Additional containers should have the same passwords as an encrypted root.
    `/usr/lib/systemd/systemd-cryptsetup`
    
 
-	> cd /usr/lib/systemd/
+	> cd /usr/lib/systemd/<br>
 	> cp ./systemd-cryptsetup ./systemd-cryptsetup.copy
 
 
@@ -93,6 +93,14 @@ Additional containers should have the same passwords as an encrypted root.
 	
      After this command check the `/boot` directory. There should be a file                 `initramfs(kernel version).img` with the current modification time.<br>    
      You can use `lsinitrd` utility to display the  content of the `initramfs` and check if our files are there.
+     
+ - Restart the system and check if your devices are unlocked.
+     
+    
+
+	> ls /dev/mapper/*
+
+    You can automatically mount unlocked devices using fstab.
      
  - Remember, that these modifications will remain unchanged only to
    the next `systemd` upgrade.<br>
